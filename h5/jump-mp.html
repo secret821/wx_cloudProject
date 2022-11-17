@@ -1,0 +1,384 @@
+<html>
+
+<head>
+  <title>打开小程序</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+  <script>
+    window.onerror = e => {
+      console.error(e)
+      alert('发生错误' + e)
+    }
+  </script>
+  <!-- weui 样式 -->
+  <link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/2.4.1/weui.min.css">
+  </link>
+  <!-- 调试用的移动端 console -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script> -->
+  <!-- <script>eruda.init();</script> -->
+  <!-- 公众号 JSSDK -->
+  <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+  <!-- 云开发 Web SDK -->
+  <script src="https://res.wx.qq.com/open/js/cloudbase/1.1.0/cloud.js"></script>
+  <script src="./rem.js" type="text/javascript"></script>
+  <script>
+    function docReady(fn) {
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        fn()
+      } else {
+        document.addEventListener('DOMContentLoaded', fn);
+      }
+    }
+
+    docReady(async function () {
+      var ua = navigator.userAgent.toLowerCase()
+      var isWXWork = ua.match(/wxwork/i) == 'wxwork'
+      var isWeixin = !isWXWork && ua.match(/micromessenger/i) == 'micromessenger'
+      var isMobile = false
+      var isDesktop = false
+      if (navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|IEMobile)/i)) {
+        isMobile = true
+      } else {
+        isDesktop = true
+      }
+
+      if (isWeixin) {
+        var containerEl = document.getElementById('wechat-web-container')
+        containerEl.classList.remove('hidden')
+        containerEl.classList.add('full', 'wechat-web-container')
+
+        var launchBtn = document.getElementById('launch-btn')
+        launchBtn.addEventListener('ready', function (e) {
+          console.log('开放标签 ready')
+        })
+        launchBtn.addEventListener('launch', function (e) {
+          console.log('开放标签 success')
+        })
+        launchBtn.addEventListener('error', function (e) {
+          console.log('开放标签 fail', e.detail)
+        })
+
+        wx.config({
+          // debug: true, // 调试时可开启
+          appId: 'wxc84f4cb3d84f0015', // <!-- replace -->
+          timestamp: 0, // 必填，填任意数字即可
+          nonceStr: 'nonceStr', // 必填，填任意非空字符串即可
+          signature: 'signature', // 必填，填任意非空字符串即可
+          jsApiList: ['chooseImage'], // 必填，随意一个接口即可 
+          openTagList: ['wx-open-launch-weapp'], // 填入打开小程序的开放标签名
+        })
+      } else if (isDesktop) {
+        // 在 pc 上则给提示引导到手机端打开
+        var containerEl = document.getElementById('desktop-web-container')
+        containerEl.classList.remove('hidden')
+        containerEl.classList.add('full', 'desktop-web-container')
+      } else {
+        var containerEl = document.getElementById('public-web-container')
+        containerEl.classList.remove('hidden')
+        containerEl.classList.add('full', 'public-web-container')
+        var c = new cloud.Cloud({
+          // 必填，表示是未登录模式
+          identityless: true,
+          // 资源方 AppID
+          resourceAppid: 'wxc84f4cb3d84f0015', // <!-- replace -->
+          // 资源方环境 ID 云开发环境 ID
+          resourceEnv: 'cloud1-7g533d863089d605', // <!-- replace -->
+        })
+        await c.init()
+        window.c = c
+
+        var buttonEl = document.getElementById('public-web-jump-button')
+        var buttonLoadingEl = document.getElementById('public-web-jump-button-loading')
+        try {
+          await openWeapp(() => {
+            buttonEl.classList.remove('weui-btn_loading')
+            buttonLoadingEl.classList.add('hidden')
+          })
+        } catch (e) {
+          buttonEl.classList.remove('weui-btn_loading')
+          buttonLoadingEl.classList.add('hidden')
+          throw e
+        }
+      }
+    }
+    )
+
+    async function openWeapp(onBeforeJump) {
+      var c = window.c
+      const res = await c.callFunction({
+        name: 'public',
+        data: {
+          action: 'jumpH5',
+        },
+      })
+
+      console.warn(res)
+      if (onBeforeJump) {
+        onBeforeJump()
+      }
+      location.href = res.result.openlink
+    }
+  </script>
+  <style>
+    
+    body,
+    html {
+          font-size: calc(100vw / 7.5);
+          /*设计稿为720px宽度*/
+    }
+    .hidden {
+      display: none;
+    }
+
+    .full {
+      background: url("http://cdn0.sciclubs.net/c/2022/images/cloud/bg.png") no-repeat top left / 100% 100%;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+
+    .public-web-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .public-web-container p {
+      position: absolute;
+      top: 40%;
+    }
+
+    .public-web-container a {
+      position: absolute;
+      bottom: 40%;
+    }
+
+    .wechat-web-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .wechat-web-container p {
+      position: absolute;
+      top: 40%;
+    }
+
+    .wechat-web-container .rightbtn {
+      position: absolute;
+      bottom: 10%;
+      left: 10%;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .wechat-web-container .clickLing {
+      position: absolute;
+      bottom: 32%;
+      left: 64%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .desktop-web-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .desktop-web-container p {
+      position: absolute;
+      top: 40%;
+    }
+
+    .wrapper-cont {
+      width: 100%;
+      overflow: hidden;
+    }
+/* 
+    .topText {
+      width: 4.4rem;
+    height: auto;
+    align-self: center;
+    margin-top: 1.2rem;
+    margin-bottom: 0.4rem;
+    }
+
+    .bottomText {
+      width: 4.4rem;
+      align-self: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .topImgs {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      position: relative;
+    }
+
+    .TopImg {
+      width: 5.6rem;
+      align-self: center;
+      z-index: 9;
+    }
+
+     .clickBtn1 {
+      width: 1.3rem;
+    height: 1.3rem;
+    position: absolute;
+    right: 10%;
+    bottom: 21%;
+    z-index: 9;
+    }
+
+    .btnBg {
+      width: 5.6rem;
+      height: 2.3rem;
+      align-self: center;
+      margin-bottom: 0.8rem;
+      background: url("http://cdn0.sciclubs.net/c/2022/images/cloud/bottomImg.png") no-repeat top left / 100% 100%;
+    }
+
+    .clickBtn2 {
+      width: 1.4rem;
+      float: right;
+      margin: 0.9rem 0.2rem 0rem 0rem;
+    }
+    */
+
+    .rightNowBtn {
+      width: 5.2rem;
+      background: url("http://cdn0.sciclubs.net/c/2022/images/cloud/rightBtn.png") no-repeat top left / 100% 100%;
+      /* height: 125px; */
+      /* align-self: center; */
+    }
+
+    /*.btnBg {
+      margin-top: -17px;
+    } */
+
+
+    .topText {
+      width: 5rem;
+      height: auto;
+      align-self: center;
+      margin-top: 2rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .bottomText {
+      width: 6rem;
+      align-self: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .topImgs {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      position: relative;
+    }
+
+    .TopImg {
+      width: 6.5rem;
+      /* height: 488px; */
+      align-self: center;
+      z-index: 9;
+    }
+
+    .clickBtn1 {
+      width: 1.7rem;
+      height: 1.7rem;
+      position: absolute;
+      right: 10%;
+      bottom: 21%;
+      z-index: 9;
+    }
+
+    .btnBg {
+      width: 6.5rem;
+      height: 2.4rem;
+      align-self: center;
+      margin-bottom: 0.8rem;
+      background: url("http://cdn0.sciclubs.net/c/2022/images/cloud/bottomImg.png") no-repeat top left / 100% 100%;
+    }
+
+    .clickBtn2 {
+      width: 1.8rem;
+      float: right;
+      margin: 0.9rem 0.2rem 0rem 0rem;
+    }
+
+    .btnBg {
+      margin-top: -17px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="page full">
+    <div id="public-web-container" class="hidden">
+      <img class="topText" src="http://cdn0.sciclubs.net/c/2022/images/cloud/congratulate.png"></img>
+      <img class="bottomText" src="http://cdn0.sciclubs.net/c/2022/images/cloud/seText.png"></img>
+      <div class="topImgs">
+        <img class="TopImg" src="http://cdn0.sciclubs.net/c/2022/images/cloud/topImg.png" />
+        <span class="clickBtn1" onclick="openWeapp()"></span>
+      </div>
+      <div class="btnBg">
+        <img class="clickBtn2" src="http://cdn0.sciclubs.net/c/2022/images/cloud/lingBtn.png"
+          onclick="openWeapp()"></img>
+      </div>
+      <img class="rightNowBtn" src="http://cdn0.sciclubs.net/c/2022/images/cloud/rightBtn.png"
+        onclick="openWeapp()"></img>
+    </div>
+    <div id="wechat-web-container" class="hidden">
+      <img class="topText" src="http://cdn0.sciclubs.net/c/2022/images/cloud/congratulate.png"></img>
+      <img class="bottomText" src="http://cdn0.sciclubs.net/c/2022/images/cloud/seText.png"></img>
+      <div class="topImgs">
+        <img class="TopImg" src="http://cdn0.sciclubs.net/c/2022/images/cloud/topImg.png" />
+        <span class="clickBtn1" onclick="openWeapp()"></span>
+      </div>
+      <div class="btnBg">
+        <wx-open-launch-weapp id="launch-btn" class="clickLing" username="gh_057a0ec621fa" path="pages/guidedCardOpening/guidedCardOpening">
+          <template>
+            <img 
+            class="clickBtn2" src="http://cdn0.sciclubs.net/c/2022/images/cloud/lingBtn.png"
+            style="width:30%; height: auto;"
+            />
+          </template>
+        </wx-open-launch-weapp>
+      </div>
+      
+      <wx-open-launch-weapp id="launch-btn" class="rightbtn" username="gh_057a0ec621fa" path="pages/guidedCardOpening/guidedCardOpening">
+        <template>
+          <img 
+            class="rightNowBtn" 
+            src="http://cdn0.sciclubs.net/c/2022/images/cloud/rightBtn.png"
+            style="width:90%; height: auto;"
+          />
+        <!-- <button class="rightNowBtn">打开小程序</button> -->
+        </template>
+      </wx-open-launch-weapp>
+      
+      <!-- 跳转小程序的开放标签。文档 https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/Wechat_Open_Tag.html -->
+      <!-- <wx-open-launch-weapp id="launch-btn" username="gh_057a0ec621fa" path="要跳转到的页面路径">
+        <template>
+          <button
+            style="width: 200px; height: 45px; text-align: center; font-size: 17px; display: block; margin: 0 auto; padding: 8px 24px; border: none; border-radius: 4px; background-color: #07c160; color:#fff;">打开小程序</button>
+        </template>
+      </wx-open-launch-weapp> -->
+    </div>
+    <div id="desktop-web-container" class="hidden">
+      <p class="">请在手机打开网页链接</p>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,30 @@
+// 云函数入口文件
+const cloud = require('wx-server-sdk')
+
+cloud.init()
+
+// 云函数入口函数
+exports.main = async (event, context) => {
+  const wxContext = cloud.getWXContext()
+
+  switch (event.action) {
+    case 'jumpH5': {
+      return getJumpH5()
+    }
+  }
+
+  return 'action not found'
+}
+
+async function getJumpH5() {
+  return cloud.openapi.urlscheme.generate({
+    jumpWxa: {
+      path: 'pages/guidedCardOpening/guidedCardOpening', // <!-- replace -->
+      query: '',
+    },
+    // 如果想不过期则置为 false，并可以存到数据库
+    isExpire: false,
+    // 一分钟有效期
+    expireTime: parseInt(Date.now() / 1000 + 60),
+  })
+}
